@@ -108,6 +108,7 @@ declare module '@elastic/apm-rum' {
       payload?: string
       headers?: Record<string, string>
     }) => boolean
+    session?: boolean
   }
 
   type Init = (options?: AgentConfigOptions) => ApmBase

@@ -312,8 +312,11 @@ class TransactionService {
               }
             }
           }
-          this.setSession(tr)
         }
+
+        // Add the session to transaction
+        this.setSession(tr)
+
         /**
          * Categorize the transaction based on the current location
          */
