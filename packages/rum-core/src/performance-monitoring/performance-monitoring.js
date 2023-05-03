@@ -390,7 +390,8 @@ export default class PerformanceMonitoring {
         duration: span.duration(),
         context: span.context,
         outcome: span.outcome,
-        sample_rate: span.sampleRate
+        sample_rate: span.sampleRate,
+        timestamp: span.timestamp
       }
       return truncateModel(SPAN_MODEL, spanData)
     })
@@ -412,7 +413,8 @@ export default class PerformanceMonitoring {
       sampled: transaction.sampled,
       sample_rate: transaction.sampleRate,
       experience: transaction.experience,
-      outcome: transaction.outcome
+      outcome: transaction.outcome,
+      timestamp: transaction.timestamp
     }
     return truncateModel(TRANSACTION_MODEL, transactionData)
   }

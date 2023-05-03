@@ -203,6 +203,26 @@ describe('TransactionService', function () {
     tr.detectFinish()
   })
 
+  it('should add timestamp to transactions if asked to do so', done => {
+    config.setConfig({ addAgentTimestamp: true })
+
+    const unMock = mockGetEntriesByType()
+
+    config.events.observe(TRANSACTION_END, transaction => {
+      console.log(JSON.stringify(transaction))
+      expect(transaction.timestamp).toBeDefined()
+      unMock()
+      done()
+    })
+
+    const tr = transactionService.startTransaction(
+      'captureTimingsTest',
+      'custom'
+    )
+
+    tr.detectFinish()
+  })
+
   it('should reuse Transaction', function () {
     transactionService = new TransactionService(logger, config)
     const reusableTr = transactionService.createCurrentTransaction(

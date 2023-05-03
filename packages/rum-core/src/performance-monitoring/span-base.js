@@ -28,7 +28,8 @@ import {
   setLabel,
   merge,
   getDuration,
-  getTime
+  getTime,
+  getEpochTime
 } from '../common/utils'
 import { NAME_UNKNOWN, TYPE_CUSTOM } from '../common/constants'
 
@@ -50,7 +51,13 @@ class SpanBase {
     this.traceId = options.traceId
     this.sampled = options.sampled
     this.sampleRate = options.sampleRate
-    this.timestamp = options.timestamp
+
+    if (options.timestamp) {
+      this.timestamp = options.timestamp
+    } else if (options.addAgentTimestamp) {
+      this.timestamp = getEpochTime()
+    }
+
     this._start = getTime(options.startTime)
     this._end = undefined
     this.ended = false

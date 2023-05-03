@@ -24,7 +24,7 @@
  */
 
 import { createStackTraces, filterInvalidFrames } from './stack-trace'
-import { generateRandomId, merge, extend } from '../common/utils'
+import { generateRandomId, merge, extend, getEpochTime } from '../common/utils'
 import { getPageContext } from '../common/context'
 import { truncateModel, ERROR_MODEL } from '../common/truncate'
 import stackParser from 'error-stack-parser'
@@ -134,6 +134,10 @@ class ErrorLogging {
         type: errorType
       },
       context
+    }
+
+    if (this._configService.get('addAgentTimestamp')) {
+      errorObject.timestamp = getEpochTime()
     }
 
     if (currentTransaction) {

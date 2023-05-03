@@ -101,6 +101,7 @@ declare module '@elastic/apm-rum' {
     eventsLimit?: number
     queueLimit?: number
     sendCredentials?: boolean
+    addAgentTimestamp?: boolean
     apmRequest?: (requestParams: {
       xhr: XMLHttpRequest
       url: string

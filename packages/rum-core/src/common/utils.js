@@ -370,6 +370,14 @@ function getTime(time) {
   return typeof time === 'number' && time >= 0 ? time : now()
 }
 
+function getEpochTime() {
+  if (PERF.timeOrigin && PERF.now) {
+    return (PERF.timeOrigin + PERF.now()) * 1000
+  }
+
+  return new Date().getTime() * 1000
+}
+
 function getDuration(start, end) {
   if (isUndefined(end) || isUndefined(start)) {
     return null
@@ -456,6 +464,7 @@ export {
   getLatestXHRSpan,
   getDuration,
   getTime,
+  getEpochTime,
   now,
   rng,
   checkSameOrigin,

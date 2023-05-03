@@ -171,6 +171,25 @@ describe('Metrics', () => {
       ])
     })
 
+    it('should add timestamps to spans if and only if required to do so', () => {
+      list.getEntriesByType.and.callFake(mockObserverEntryTypes)
+      let tr = captureObserverEntries(list, {
+        isHardNavigation: false,
+        trStart: 1200,
+        addAgentTimestamp: true
+      })
+
+      tr.spans.forEach(span => expect(span.timestamp).toBeDefined())
+
+      tr = captureObserverEntries(list, {
+        isHardNavigation: false,
+        trStart: 1500,
+        addAgentTimestamp: false
+      })
+
+      tr.spans.forEach(span => expect(span.timestamp).toBeUndefined())
+    })
+
     it('should start recorder only when the type is supported', () => {
       const recorder = new PerfEntryRecorder(() => {})
       const onStartSpy = jasmine.createSpy()
@@ -211,6 +230,14 @@ describe('Metrics', () => {
             _end: 995.3399999591056
           })
         )
+      })
+
+      it('should createTotalBlockingTimeSpan with timestamps if and only if asked', () => {
+        calculateTotalBlockingTime(longtaskEntries)
+        let tbtSpan = createTotalBlockingTimeSpan(metrics.tbt, true)
+        expect(tbtSpan.timestamp).toBeDefined()
+        tbtSpan = createTotalBlockingTimeSpan(metrics.tbt, false)
+        expect(tbtSpan.timestamp).toBeUndefined()
       })
 
       it('should calculate total blocking time from long tasks', () => {
@@ -302,6 +329,13 @@ describe('Metrics', () => {
             _start: 5482.669999997597
           })
         )
+      })
+
+      it('should createFirstInputDelaySpan with timestamps if and only if asked', () => {
+        let span = createFirstInputDelaySpan(fidEntries, true)
+        expect(span.timestamp).toBeDefined()
+        span = createFirstInputDelaySpan(fidEntries, false)
+        expect(span.timestamp).toBeUndefined()
       })
     })
 
@@ -482,6 +516,14 @@ describe('Metrics', () => {
         duration: 399.9299999559298,
         max: 187.19000002602115
       })
+    })
+
+    it('should add timestamps to longtask spans if and only if asked', () => {
+      let agg = { count: 0, duration: 0, max: 0 }
+      let spans = createLongTaskSpans(longtaskEntries, agg, true)
+      spans.forEach(span => expect(span.timestamp).toBeDefined())
+      spans = createLongTaskSpans(longtaskEntries, agg, false)
+      spans.forEach(span => expect(span.timestamp).toBeUndefined())
     })
   })
 })

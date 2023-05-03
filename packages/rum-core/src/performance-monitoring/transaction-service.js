@@ -78,6 +78,7 @@ class TransactionService {
         const isHardNavigation = tr.type === PAGE_LOAD
         const { spans, marks } = captureObserverEntries(list, {
           isHardNavigation,
+          addAgentTimestamp: this._config.config.addAgentTimestamp,
           trStart: isHardNavigation ? 0 : tr._start
         })
         tr.spans.push(...spans)
@@ -87,7 +88,10 @@ class TransactionService {
   }
 
   createCurrentTransaction(name, type, options) {
-    const tr = new Transaction(name, type, options)
+    const config = this._config.config
+    let presetOptions = { addAgentTimestamp: config.addAgentTimestamp }
+    let finalOptions = extend(presetOptions, options)
+    const tr = new Transaction(name, type, finalOptions)
     this.currentTransaction = tr
     return tr
   }
@@ -100,7 +104,10 @@ class TransactionService {
 
   createOptions(options) {
     const config = this._config.config
-    let presetOptions = { transactionSampleRate: config.transactionSampleRate }
+    let presetOptions = {
+      transactionSampleRate: config.transactionSampleRate,
+      addAgentTimestamp: config.addAgentTimestamp
+    }
     let perfOptions = extend(presetOptions, options)
     if (perfOptions.managed) {
       perfOptions = extend(
@@ -288,7 +295,12 @@ class TransactionService {
           if (tr.captureTimings) {
             const { cls, fid, tbt, longtask } = metrics
             if (tbt.duration > 0) {
-              tr.spans.push(createTotalBlockingTimeSpan(tbt))
+              tr.spans.push(
+                createTotalBlockingTimeSpan(
+                  tbt,
+                  this._config.get('addAgentTimestamp')
+                )
+              )
             }
 
             tr.experience = {}

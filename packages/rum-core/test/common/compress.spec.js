@@ -137,6 +137,7 @@ const V3_MAPPING = {
   sync: 'sy',
   tags: 'g',
   timeToFirstByte: 'fb',
+  timestamp: 'timestamp',
   trace_id: 'tid',
   transaction: 'x',
   transaction_id: 'xid',
@@ -270,6 +271,28 @@ describe('Compress', function () {
     testMappedObject(transaction, compressed)
   })
 
+  it('should retain timestamps in transactions and spans', () => {
+    const transaction = generateTransaction(1, true).map(tr => {
+      tr.timestamp = 2091250810
+      tr.spans.forEach(sp => (sp.timestamp = 2091250810))
+      const model = performanceMonitoring.createTransactionDataModel(tr)
+      return model
+    })[0]
+
+    const compressed = compressTransaction(transaction)
+    testMappedObject(transaction, compressed)
+  })
+
+  it('should not add extra timestamps in transactions and spans', () => {
+    const transaction = generateTransaction(1, true).map(tr => {
+      const model = performanceMonitoring.createTransactionDataModel(tr)
+      return model
+    })[0]
+
+    const compressed = compressTransaction(transaction)
+    testMappedObject(transaction, compressed)
+  })
+
   it('should include provided navigation timing marks when compressing transaction model', () => {
     const expectedNtMarks = {
       [V3_MAPPING.fetchStart]: 1,
@@ -383,6 +406,18 @@ describe('Compress', function () {
   it('should compress error model', () => {
     const error = generateErrors(1).map((err, i) => {
       let model = errorLogging.createErrorDataModel(err)
+      model.id = 'error-id-' + i
+      return model
+    })[0]
+    const compressed = compressError(error)
+
+    testMappedObject(error, compressed)
+  })
+
+  it('should retain timestamps in errors', () => {
+    const error = generateErrors(1).map((err, i) => {
+      let model = errorLogging.createErrorDataModel(err)
+      model.timestamp = 1030295531
       model.id = 'error-id-' + i
       return model
     })[0]

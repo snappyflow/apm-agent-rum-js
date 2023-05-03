@@ -172,4 +172,19 @@ describe('Transaction', function () {
     transaction._start = transaction._start - 101
     expect(transaction.canReuse()).toBe(false)
   })
+
+  it('should create spans with timestamps if and only if it is using agent timestamp', function () {
+    let transaction, span
+
+    transaction = new Transaction('transaction', 'transaction', {
+      addAgentTimestamp: true
+    })
+
+    span = transaction.startSpan('span', 'span')
+    expect(span.timestamp).toBeDefined()
+
+    transaction = new Transaction('transaction', 'transaction')
+    span = transaction.startSpan('span', 'span')
+    expect(span.timestamp).toBeUndefined()
+  })
 })

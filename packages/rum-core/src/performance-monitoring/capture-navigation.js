@@ -86,7 +86,13 @@ function shouldCreateSpan(start, end, trStart, trEnd, baseTime = 0) {
   )
 }
 
-function createNavigationTimingSpans(timings, baseTime, trStart, trEnd) {
+function createNavigationTimingSpans(
+  timings,
+  baseTime,
+  trStart,
+  trEnd,
+  addAgentTimestamp = false
+) {
   const spans = []
   for (let i = 0; i < eventPairs.length; i++) {
     const start = timings[eventPairs[i][0]]
@@ -95,7 +101,9 @@ function createNavigationTimingSpans(timings, baseTime, trStart, trEnd) {
     if (!shouldCreateSpan(start, end, trStart, trEnd, baseTime)) {
       continue
     }
-    const span = new Span(eventPairs[i][2], 'hard-navigation.browser-timing')
+    const span = new Span(eventPairs[i][2], 'hard-navigation.browser-timing', {
+      addAgentTimestamp
+    })
     let data = null
     /**
      * - pageResponse flag is used to set the id of the span to
@@ -115,14 +123,17 @@ function createNavigationTimingSpans(timings, baseTime, trStart, trEnd) {
   return spans
 }
 
-function createResourceTimingSpan(resourceTimingEntry) {
+function createResourceTimingSpan(
+  resourceTimingEntry,
+  addAgentTimestamp = false
+) {
   const { name, initiatorType, startTime, responseEnd } = resourceTimingEntry
   let kind = 'resource'
   if (initiatorType) {
     kind += '.' + initiatorType
   }
   const spanName = stripQueryStringFromUrl(name)
-  const span = new Span(spanName, kind)
+  const span = new Span(spanName, kind, { addAgentTimestamp })
 
   span._start = startTime
   span.end(responseEnd, { url: name, entry: resourceTimingEntry })
@@ -146,7 +157,13 @@ function isIntakeAPIEndpoint(url) {
   return /intake\/v\d+\/rum\/events/.test(url)
 }
 
-function createResourceTimingSpans(entries, requestPatchTime, trStart, trEnd) {
+function createResourceTimingSpans(
+  entries,
+  requestPatchTime,
+  trStart,
+  trEnd,
+  addAgentTimestamp = false
+) {
   const spans = []
   for (let i = 0; i < entries.length; i++) {
     const { initiatorType, name, startTime, responseEnd } = entries[i]
@@ -179,13 +196,18 @@ function createResourceTimingSpans(entries, requestPatchTime, trStart, trEnd) {
     }
 
     if (shouldCreateSpan(startTime, responseEnd, trStart, trEnd)) {
-      spans.push(createResourceTimingSpan(entries[i]))
+      spans.push(createResourceTimingSpan(entries[i], addAgentTimestamp))
     }
   }
   return spans
 }
 
-function createUserTimingSpans(entries, trStart, trEnd) {
+function createUserTimingSpans(
+  entries,
+  trStart,
+  trEnd,
+  addAgentTimestamp = false
+) {
   const userTimingSpans = []
   for (let i = 0; i < entries.length; i++) {
     const { name, startTime, duration } = entries[i]
@@ -198,7 +220,7 @@ function createUserTimingSpans(entries, trStart, trEnd) {
       continue
     }
     const kind = 'app'
-    const span = new Span(name, kind)
+    const span = new Span(name, kind, { addAgentTimestamp })
     span._start = startTime
     span.end(end)
 
@@ -332,7 +354,8 @@ function captureNavigation(transaction) {
       timings,
       timings.fetchStart,
       trStart,
-      trEnd
+      trEnd,
+      transaction.options.addAgentTimestamp
     ).forEach(span => {
       span.traceId = transaction.traceId
       span.sampled = transaction.sampled
@@ -358,16 +381,20 @@ function captureNavigation(transaction) {
       resourceEntries,
       state.bootstrapTime,
       trStart,
-      trEnd
+      trEnd,
+      transaction.options.addAgentTimestamp
     ).forEach(span => transaction.spans.push(span))
 
     /**
      * Capture user timing measures as spans
      */
     const userEntries = PERF.getEntriesByType(MEASURE)
-    createUserTimingSpans(userEntries, trStart, trEnd).forEach(span =>
-      transaction.spans.push(span)
-    )
+    createUserTimingSpans(
+      userEntries,
+      trStart,
+      trEnd,
+      transaction.options.addAgentTimestamp
+    ).forEach(span => transaction.spans.push(span))
   }
 }
 

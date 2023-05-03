@@ -58,7 +58,7 @@ const LONG_TASK_THRESHOLD = 50
  * Create Spans for the long task entries
  * Spec - https://w3c.github.io/longtasks/
  */
-export function createLongTaskSpans(longtasks, agg) {
+export function createLongTaskSpans(longtasks, agg, addAgentTimestamp = false) {
   const spans = []
 
   for (let i = 0; i < longtasks.length; i++) {
@@ -69,7 +69,10 @@ export function createLongTaskSpans(longtasks, agg) {
      */
     const { name, startTime, duration, attribution } = longtasks[i]
     const end = startTime + duration
-    const span = new Span(`Longtask(${name})`, LONG_TASK, { startTime })
+    const span = new Span(`Longtask(${name})`, LONG_TASK, {
+      startTime,
+      addAgentTimestamp
+    })
     agg.count++
     agg.duration += duration
     agg.max = Math.max(duration, agg.max)
@@ -118,22 +121,32 @@ export function createLongTaskSpans(longtasks, agg) {
   return spans
 }
 
-export function createFirstInputDelaySpan(fidEntries) {
+export function createFirstInputDelaySpan(
+  fidEntries,
+  addAgentTimestamp = false
+) {
   let firstInput = fidEntries[0]
 
   if (firstInput) {
     const { startTime, processingStart } = firstInput
 
-    const span = new Span('First Input Delay', FIRST_INPUT, { startTime })
+    const span = new Span('First Input Delay', FIRST_INPUT, {
+      startTime,
+      addAgentTimestamp
+    })
     span.end(processingStart)
     return span
   }
 }
 
-export function createTotalBlockingTimeSpan(tbtObject) {
+export function createTotalBlockingTimeSpan(
+  tbtObject,
+  addAgentTimestamp = false
+) {
   const { start, duration } = tbtObject
   const tbtSpan = new Span('Total Blocking Time', LONG_TASK, {
-    startTime: start
+    startTime: start,
+    addAgentTimestamp
   })
   tbtSpan.end(start + duration)
   return tbtSpan
@@ -215,11 +228,18 @@ export function calculateCumulativeLayoutShift(clsEntries) {
  *   marks: {}
  * }
  */
-export function captureObserverEntries(list, { isHardNavigation, trStart }) {
+export function captureObserverEntries(
+  list,
+  { isHardNavigation, trStart, addAgentTimestamp }
+) {
   const longtaskEntries = list.getEntriesByType(LONG_TASK).filter(entry => {
     return entry.startTime >= trStart
   })
-  const longTaskSpans = createLongTaskSpans(longtaskEntries, metrics.longtask)
+  const longTaskSpans = createLongTaskSpans(
+    longtaskEntries,
+    metrics.longtask,
+    addAgentTimestamp
+  )
 
   const result = {
     spans: longTaskSpans,
@@ -279,7 +299,7 @@ export function captureObserverEntries(list, { isHardNavigation, trStart }) {
    * Capture First Input Delay (FID) as span
    */
   const fidEntries = list.getEntriesByType(FIRST_INPUT)
-  const fidSpan = createFirstInputDelaySpan(fidEntries)
+  const fidSpan = createFirstInputDelaySpan(fidEntries, addAgentTimestamp)
   if (fidSpan) {
     metrics.fid = fidSpan.duration()
     result.spans.push(fidSpan)

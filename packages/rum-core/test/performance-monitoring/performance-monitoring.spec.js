@@ -188,11 +188,33 @@ describe('PerformanceMonitoring', function () {
     var payload = performanceMonitoring.createTransactionPayload(tr)
     expect(payload.name).toBe('transaction1')
     expect(payload.type).toBe('transaction1type')
+    expect(payload.agentTimestamp).not.toBeDefined()
     expect(payload.spans.length).toBe(1)
     expect(payload.spans[0].name).toBe('span1')
     expect(payload.spans[0].type).toBe('span1type')
     expect(payload.spans[0].start).toBe(parseInt(span._start - tr._start))
     expect(payload.spans[0].duration).toBe(parseInt(span._end - span._start))
+    expect(payload.spans[0].agentTimestamp).not.toBeDefined()
+  })
+
+  it('should preserve timestamps when creating payload', function () {
+    var tr = new Transaction('transaction1', 'transaction1type', {
+      transactionSampleRate: 1,
+      addAgentTimestamp: true
+    })
+    var span = tr.startSpan('span1', 'span1type')
+    span.end()
+    span._end += 10
+    tr.detectFinish()
+
+    expect(tr._end).toBeDefined()
+    tr._end = span._end + 100
+
+    expect(tr.timestamp).toBeDefined()
+
+    var payload = performanceMonitoring.createTransactionPayload(tr)
+    expect(payload.timestamp).toBeDefined()
+    expect(payload.timestamp).toEqual(tr.timestamp)
   })
 
   it('should sendPageLoadMetrics', function (done) {

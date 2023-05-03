@@ -151,6 +151,34 @@ describe('Capture hard navigation', function () {
     ])
   })
 
+  it('should create navigation timing spans with timestamps if and only if asked', () => {
+    const requestStartValues = [undefined, null, 0, 1, Number(new Date())]
+    for (let i = 0; i < requestStartValues.length; i++) {
+      const value = requestStartValues[i]
+      const timingObj = { ...timings, requestStart: value }
+
+      let spans = createNavigationTimingSpans(
+        timingObj,
+        timingObj.fetchStart,
+        transactionStart,
+        transactionEnd,
+        true
+      )
+
+      spans.forEach(span => expect(span.timestamp).toBeDefined())
+
+      spans = createNavigationTimingSpans(
+        timingObj,
+        timingObj.fetchStart,
+        transactionStart,
+        transactionEnd,
+        false
+      )
+
+      spans.forEach(span => expect(span.timestamp).not.toBeDefined())
+    }
+  })
+
   it('should populate desination context only for requestStart span', () => {
     const spans = createNavigationTimingSpans(
       timings,
@@ -207,6 +235,44 @@ describe('Capture hard navigation', function () {
     )
 
     expect(spans.map(mapSpan)).toEqual(spanSnapshot)
+  })
+
+  it('should createResourceTimingSpans with timestamps if and only if asked', function () {
+    const entries = [
+      {
+        name: 'http://localhost:8200/intake/v2/rum/events',
+        initiatorType: 'fetch',
+        entryType: 'resource',
+        startTime: 25,
+        responseEnd: 120
+      },
+      {
+        name: 'http://apm-server:8200/intake/v3/rum/events',
+        initiatorType: 'xmlhttprequest',
+        entryType: 'resource',
+        startTime: 100,
+        responseEnd: 150
+      }
+    ]
+
+    let spans = createResourceTimingSpans(
+      entries,
+      150,
+      transactionStart,
+      transactionEnd,
+      true
+    )
+
+    spans.forEach(span => expect(span.timestamp).toBeDefined())
+
+    spans = createResourceTimingSpans(
+      entries,
+      150,
+      transactionStart,
+      transactionEnd
+    )
+
+    spans.forEach(span => expect(span.timestamp).toBeUndefined())
   })
 
   it('should filter intake API calls from resource timing', function () {
@@ -303,6 +369,24 @@ describe('Capture hard navigation', function () {
     ])
   })
 
+  it('should createUserTimingSpans with timestamps if and only if asked', function () {
+    let spans = createUserTimingSpans(
+      userTimingEntries,
+      transactionStart,
+      transactionEnd,
+      true
+    )
+    spans.forEach(span => expect(span.timestamp).toBeDefined())
+
+    spans = createUserTimingSpans(
+      userTimingEntries,
+      transactionStart,
+      transactionEnd,
+      false
+    )
+    spans.forEach(span => expect(span.timestamp).toBeUndefined())
+  })
+
   it('should capture spans for hard navigation', function () {
     const tr = new Transaction('test', PAGE_LOAD)
     tr.captureTimings = true
@@ -328,6 +412,42 @@ describe('Capture hard navigation', function () {
         span.type === 'app'
     )
     expect(foundSpans.length).toBeGreaterThanOrEqual(3)
+    unmock()
+  })
+
+  it('should add timestamps when capturing navigation if and only if asked', function () {
+    let tr = new Transaction('test', PAGE_LOAD, { addAgentTimestamp: true })
+    tr.captureTimings = true
+    tr.end()
+    captureNavigation(tr)
+    tr.spans.forEach(span => expect(span.timestamp).toBeDefined())
+
+    tr = new Transaction('test', PAGE_LOAD, { addAgentTimestamp: false })
+    tr.captureTimings = true
+    tr.end()
+    captureNavigation(tr)
+    tr.spans.forEach(span => expect(span.timestamp).toBeUndefined())
+
+    const unmock = mockGetEntriesByType()
+
+    tr = new Transaction('test', ROUTE_CHANGE, { addAgentTimestamp: true })
+    tr.captureTimings = true
+    let xhrSpan = tr.startSpan('GET http://example.com', 'external.http')
+    xhrSpan.end()
+    tr._start = transactionStart
+    tr.end()
+    captureNavigation(tr)
+    tr.spans.forEach(span => expect(span.timestamp).toBeDefined())
+
+    tr = new Transaction('test', ROUTE_CHANGE, { addAgentTimestamp: false })
+    tr.captureTimings = true
+    xhrSpan = tr.startSpan('GET http://example.com', 'external.http')
+    xhrSpan.end()
+    tr._start = transactionStart
+    tr.end()
+    captureNavigation(tr)
+    tr.spans.forEach(span => expect(span.timestamp).toBeUndefined())
+
     unmock()
   })
 

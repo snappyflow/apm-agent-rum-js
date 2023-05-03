@@ -104,6 +104,7 @@ class Transaction extends SpanBase {
     opts.traceId = this.traceId
     opts.sampled = this.sampled
     opts.sampleRate = this.sampleRate
+    opts.addAgentTimestamp = this.options.addAgentTimestamp
 
     if (!opts.parentId) {
       opts.parentId = this.id

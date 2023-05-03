@@ -190,6 +190,20 @@ describe('ErrorLogging', function () {
     transaction.end()
   })
 
+  it('should add timestamps to errors if and only if needed', () => {
+    configService.setConfig({ addAgentTimestamp: true })
+    const errorEvent = {
+      error: new Error('agent-timestamp-testing')
+    }
+
+    let errorData = errorLogging.createErrorDataModel(errorEvent)
+    expect(errorData.timestamp).toBeDefined()
+
+    configService.setConfig({ addAgentTimestamp: false })
+    errorData = errorLogging.createErrorDataModel(errorEvent)
+    expect(errorData.timestamp).not.toBeDefined()
+  })
+
   it('should support ErrorEvent', function (done) {
     apmServer.init()
     var errorEvent = createErrorEvent(testErrorMessage)

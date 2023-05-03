@@ -227,6 +227,9 @@ export function compressTransaction(transaction) {
     if (span.action) {
       spanData.ac = span.action
     }
+    if (span.timestamp) {
+      spanData.timestamp = span.timestamp
+    }
     return spanData
   })
 
@@ -258,6 +261,10 @@ export function compressTransaction(transaction) {
     tr.ses = { id, seq: sequence }
   }
 
+  if (transaction.timestamp) {
+    tr.timestamp = transaction.timestamp
+  }
+
   return tr
 }
 
@@ -272,6 +279,10 @@ export function compressError(error) {
       t: error.type
     },
     c: compressContext(error.context)
+  }
+
+  if (error.timestamp) {
+    compressed.timestamp = error.timestamp
   }
 
   const { transaction } = error

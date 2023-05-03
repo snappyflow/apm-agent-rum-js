@@ -46,4 +46,11 @@ describe('SpanBase', function () {
     span.addContext({ test: { ctx: 'hamid' } })
     expect(span.context).toEqual({ test: { ctx: 'hamid' } })
   })
+
+  it('should addAgentTimestamp if and only if required', function () {
+    let span = new SpanBase('test', 'test', { addAgentTimestamp: true })
+    expect(span.timestamp).toBeDefined()
+    span = new SpanBase()
+    expect(span.timestamp).toBeUndefined()
+  })
 })
