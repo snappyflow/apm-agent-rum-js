@@ -270,6 +270,11 @@ class TransactionService {
           return
         }
 
+        /**
+         * Categorize the transaction based on the current location
+         */
+        tr.name = slugifyUrl(currentUrl)
+
         if (type === PAGE_LOAD) {
           /**
            * Setting the pageLoadTransactionName via configService.setConfig after
@@ -278,7 +283,7 @@ class TransactionService {
           const pageLoadTransactionName = this._config.get(
             'pageLoadTransactionName'
           )
-          if (name === NAME_UNKNOWN && pageLoadTransactionName) {
+          if (pageLoadTransactionName) {
             tr.name = pageLoadTransactionName
           }
           /**
@@ -313,12 +318,6 @@ class TransactionService {
             }
           }
           this.setSession(tr)
-        }
-        /**
-         * Categorize the transaction based on the current location
-         */
-        if (tr.name === NAME_UNKNOWN) {
-          tr.name = slugifyUrl(currentUrl)
         }
 
         captureNavigation(tr)
