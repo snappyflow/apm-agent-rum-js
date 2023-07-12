@@ -46,6 +46,7 @@
  */
 
 import { isBrowser } from './utils'
+import Typo from 'typo-js'
 
 /**
  * Add default ports for other protocols(ws, wss) after
@@ -286,4 +287,130 @@ export function slugifyUrl(urlStr, depth = 2) {
     (query ? '?{query}' : '')
 
   return redacted
+}
+
+let dict = null
+
+const LETTER_THRESHOLD_MIN = 0.3
+const LETTER_THRESHOLD_MAX = 0.6
+
+const UPPER_CASE_REGEX = /[A-Z]/g
+const LOWER_CASE_REGEX = /[a-z]/g
+const NUMERIC_REGEX = /[0-9]/g
+const SPECIAL_CHAR_REGEX = /[\W_]/g
+const FILE_ENDING_REGEX = /\.\w+#?$/
+
+/***
+ * isToken(part: string): boolean
+ * @abstract Determines if the given string is a token or not.
+ *
+ * @description
+ * URL path params consist of 2 types of parts - tokens and words.
+ *	A part is said to be a token if it is randomly generated for a particular UUID
+ *	If the part is static, then it is considered to be a word.
+ *
+ *	@argument part: string
+ *	The URL part that has to be classified.
+ *
+ *	@returns
+ *	true if part is a token
+ *	false if part is a word
+ *
+ *	@example
+ *	isToken("my-long-winding-string")	//	false
+ *	isToken("JZHQyidcaI")				//	true
+ *	isToken("vmprojects")				//	false
+ */
+function isToken(part) {
+  //if (typeof(part) !== "string") throw (`${part} should be a string.`);
+
+  //	Test 1 - Spellcheck test
+  let misspellings = part
+    .split(/[_\-]/g)
+    .filter(subPart => !dict.check(subPart))
+
+  //	If every word is perfectly spelled, probably not a token
+  if (misspellings.length === 0) return false
+
+  //	Test 2 - If a file, like "*.html" or something is encountered, probably not a token
+  if (FILE_ENDING_REGEX.test(part)) return false
+
+  //  Test 3 - Check no. of digits.
+  if (NUMERIC_REGEX.test(part)) return true
+
+  //  Test 4 - Check no. of special symbols.
+  if (SPECIAL_CHAR_REGEX.test(part)) return true
+
+  //  Test 5 - Check lowercase and uppercase ratios.
+  const totalChars = part.length
+  const lowerChars = (part.match(LOWER_CASE_REGEX) || []).length
+  const upperChars = (part.match(UPPER_CASE_REGEX) || []).length
+
+  const lowerRatio = lowerChars / totalChars
+  const upperRatio = upperChars / totalChars
+
+  if (lowerRatio < LETTER_THRESHOLD_MAX && lowerRatio > LETTER_THRESHOLD_MIN)
+    return true
+  if (upperRatio < LETTER_THRESHOLD_MAX && upperRatio > LETTER_THRESHOLD_MIN)
+    return true
+
+  //  Fulfilled the last of the conditions; it's probably not a token
+  return false
+}
+
+/**
+ *   sfSlugify(urlStr: string): string
+ *   @abstract Special URL conversion function to work for SPAs like SnappyFlow.
+ *
+ *   @description
+ *   This function replaces the variable parts of a given URL (called tokens) with fixed values instead.
+ *   This way, we can group by transaction.name in the RUM, greatly reducing the number of transactions shown
+ *   for the same view.
+ *
+ *   @argument urlStr: string
+ *   The URL string that needs to be normalized.
+ *
+ *   @returns The normalized string.
+ *
+ *   @example
+ *   sfSlugify("https://apmmanager.snappyflow.io/#/applications/JZHQyidcaI/inventory?tab=Description&instanceName=Apmmgr-prvtlink-Netlb") // /applications/:id/inventory?{query}
+ */
+export function sfSlugify(urlStr) {
+  //  Ensure that the spellchecker is loaded with a dict
+  if (!dict) {
+    dict = new Typo('en-US', false, false)
+  }
+
+  //  Get the different parts of the URL
+  const parsedUrl = new Url(urlStr)
+  let { query, path, hash } = parsedUrl
+
+  //  In SPAs, the true path often comes after '#'
+  //  This is so that servers like apache, nginx do not interpret it as a different file that needs to be served
+  //  Get the actual query for this use case
+  if (hash.includes('?')) {
+    query = hash.match(/\?.*/)[0]
+    hash = hash.replace(/\?.*/, '')
+  }
+
+  //  Get the path for this use case
+  if (hash.includes('/')) path = hash.replace('#', '')
+
+  //  Split the path into its constituent parts
+  const pathParts = path.substring(1).split('/')
+
+  //  Redact the path parts as necessary
+  const redactionString = ':id'
+  const finalParts = pathParts.map(part =>
+    isToken(part) ? redactionString : part
+  )
+
+  //  Rejoin the path parts and add the query string
+  const joinedParts =
+    finalParts.length > 1 ? finalParts.join('/') : finalParts.join('')
+  const queryString = query ? `?{query}` : ''
+
+  let finalString = `/${joinedParts}${queryString}`
+
+  return finalString
 }

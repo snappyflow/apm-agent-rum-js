@@ -58,7 +58,7 @@ import {
 } from '../common/constants'
 import { addTransactionContext } from '../common/context'
 import { __DEV__, state } from '../state'
-import { slugifyUrl } from '../common/url'
+import { sfSlugify } from '../common/url'
 
 class TransactionService {
   constructor(logger, config) {
@@ -273,7 +273,7 @@ class TransactionService {
         /**
          * Categorize the transaction based on the current location
          */
-        tr.name = slugifyUrl(currentUrl)
+        tr.name = sfSlugify(currentUrl)
 
         if (type === PAGE_LOAD) {
           /**
