@@ -145,7 +145,7 @@ describe('PerformanceMonitoring', function () {
 
     expect(apmServer.addTransaction).toHaveBeenCalledWith(
       jasmine.objectContaining({
-        name: 'transaction',
+        name: '/test',
         type: 'transaction'
       })
     )

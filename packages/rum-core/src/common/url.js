@@ -46,7 +46,6 @@
  */
 
 import { isBrowser } from './utils'
-import Typo from 'typo-js'
 
 /**
  * Add default ports for other protocols(ws, wss) after
@@ -289,8 +288,6 @@ export function slugifyUrl(urlStr, depth = 2) {
   return redacted
 }
 
-let dict = null
-
 const LETTER_THRESHOLD_MIN = 0.3
 const LETTER_THRESHOLD_MAX = 0.6
 
@@ -299,6 +296,9 @@ const LOWER_CASE_REGEX = /[a-z]/g
 const NUMERIC_REGEX = /[0-9]/g
 const SPECIAL_CHAR_REGEX = /[\W_]/g
 const FILE_ENDING_REGEX = /\.\w+#?$/
+
+//  Only include a word here if it would otherwise get flagged
+const KNOWN_WORDS = ['cloud-profiles', 'dashboard-list']
 
 /***
  * isToken(part: string): boolean
@@ -324,13 +324,8 @@ const FILE_ENDING_REGEX = /\.\w+#?$/
 function isToken(part) {
   //if (typeof(part) !== "string") throw (`${part} should be a string.`);
 
-  //	Test 1 - Spellcheck test
-  let misspellings = part
-    .split(/[_\-]/g)
-    .filter(subPart => !dict.check(subPart))
-
-  //	If every word is perfectly spelled, probably not a token
-  if (misspellings.length === 0) return false
+  //	Test 1 - Known word test
+  if (KNOWN_WORDS.includes(part)) return false
 
   //	Test 2 - If a file, like "*.html" or something is encountered, probably not a token
   if (FILE_ENDING_REGEX.test(part)) return false
@@ -376,11 +371,6 @@ function isToken(part) {
  *   sfSlugify("https://apmmanager.snappyflow.io/#/applications/JZHQyidcaI/inventory?tab=Description&instanceName=Apmmgr-prvtlink-Netlb") // /applications/:id/inventory?{query}
  */
 export function sfSlugify(urlStr) {
-  //  Ensure that the spellchecker is loaded with a dict
-  if (!dict) {
-    dict = new Typo('en-US', false, false)
-  }
-
   //  Get the different parts of the URL
   const parsedUrl = new Url(urlStr)
   let { query, path, hash } = parsedUrl

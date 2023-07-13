@@ -23,7 +23,7 @@
  *
  */
 
-import { Url, slugifyUrl } from '../../src/common/url'
+import { Url, slugifyUrl, sfSlugify } from '../../src/common/url'
 
 describe('Url parser', function () {
   it('should parse relative url', function () {
@@ -403,5 +403,54 @@ describe('Slug URL', () => {
   it('react mix of lower-uppercase characters', () => {
     validate('/abcDEF', '/:id')
     validate('/a1W9FtW5DnkyP3Bucng4aLvqT/edit', '/:id/*')
+  })
+})
+
+describe('SF Slug URL', () => {
+  it('performs proper redaction', () => {
+    let urls = [
+      'https://apmmanager.snappyflow.io/#/applications/JZHQyidcaI/inventory?tab=Description&instanceName=Apmmgr-prvtlink-Netlb',
+      'https://apmmanager.snappyflow.io/#/applications/JZHQyidcaI/dashboard/JZHQyidcaI',
+      'https://10.81.1.107/home/index.html#/applications/Ij0h1tXWB8/dashboard/Ij0h1tXWB8',
+      'https://10.81.1.134/home/index.html#/configuration/vmprojects',
+      'https://apmmanager.snappyflow.io/#/applications/JZHQyidcaI/inventory',
+      'https://apmmanager.snappyflow.io/#/applications/JZHQyidcaI/dashboard/JZHQyidcaI?view=rum',
+      'https://apmmanager.snappyflow.io/#/applications/uHsM5lP5Px/dashboard/uHsM5lP5Px?view=processing',
+      'https://add-component-test-sf-lb-8fd0571029bb08f5.elb.us-west-2.amazonaws.com/home/index.html#/configuration/vmprojects',
+      'https://10.81.1.107/home/index.html#/configuration/manage/cloud-profiles',
+      'https://apmmanager.snappyflow.io/#/applications/oV6MbgfDFO/inventory?tab=Description&instanceName=ip-10-0-3-109',
+      'https://apmmanager.snappyflow.io/#/login?redirect_url=configuration&redirect_params=%7B%7D',
+      'https://apmmanager.snappyflow.io/#/projects/fSSkWEe95h/dashboard/fSSkWEe95h?view=alerts',
+      'https://add-component-test-sf-lb-8fd0571029bb08f5.elb.us-west-2.amazonaws.com/home/index.html#/configuration/admin/system',
+      'https://apmmanager.snappyflow.io/#/configuration/dashboard-list',
+      'https://10.81.1.107/home/index.html',
+      'https://apmmanager.snappyflow.io/',
+      'https://apmmanager.snappyflow.io/#/configuration/vmprojects'
+    ]
+
+    let expected = [
+      '/applications/:id/inventory?{query}',
+      '/applications/:id/dashboard/:id',
+      '/applications/:id/dashboard/:id',
+      '/configuration/vmprojects',
+      '/applications/:id/inventory',
+      '/applications/:id/dashboard/:id?{query}',
+      '/applications/:id/dashboard/:id?{query}',
+      '/configuration/vmprojects',
+      '/configuration/manage/cloud-profiles',
+      '/applications/:id/inventory?{query}',
+      '/login?{query}',
+      '/projects/:id/dashboard/:id?{query}',
+      '/configuration/admin/system',
+      '/configuration/dashboard-list',
+      '/home/index.html',
+      '/',
+      '/configuration/vmprojects'
+    ]
+
+    urls.forEach((url, index) => {
+      let finalUrl = sfSlugify(url)
+      expect(finalUrl).toEqual(expected[index])
+    })
   })
 })

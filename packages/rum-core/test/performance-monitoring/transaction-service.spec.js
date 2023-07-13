@@ -654,7 +654,7 @@ describe('TransactionService', function () {
         'transaction.breakdown.count': { value: 1 }
       })
       expect(breakdown[1]).toEqual({
-        transaction: { name: 'transaction', type: 'custom' },
+        transaction: { name: '/test', type: 'custom' },
         span: { type: 'app', subtype: undefined },
         samples: {
           'span.self_time.count': { value: 1 },
@@ -662,7 +662,7 @@ describe('TransactionService', function () {
         }
       })
       expect(breakdown[2]).toEqual({
-        transaction: { name: 'transaction', type: 'custom' },
+        transaction: { name: '/test', type: 'custom' },
         span: { type: 'ext', subtype: 'http' },
         samples: {
           'span.self_time.count': { value: 2 },
