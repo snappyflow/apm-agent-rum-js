@@ -297,9 +297,6 @@ const NUMERIC_REGEX = /[0-9]/g
 const SPECIAL_CHAR_REGEX = /[\W_]/g
 const FILE_ENDING_REGEX = /\.\w+#?$/
 
-//  Only include a word here if it would otherwise get flagged
-const KNOWN_WORDS = ['cloud-profiles', 'dashboard-list']
-
 /***
  * isToken(part: string): boolean
  * @abstract Determines if the given string is a token or not.
@@ -324,19 +321,17 @@ const KNOWN_WORDS = ['cloud-profiles', 'dashboard-list']
 function isToken(part) {
   //if (typeof(part) !== "string") throw (`${part} should be a string.`);
 
-  //	Test 1 - Known word test
-  if (KNOWN_WORDS.includes(part)) return false
-
-  //	Test 2 - If a file, like "*.html" or something is encountered, probably not a token
+  //	Test 1 - If a file, like "*.html" or something is encountered, probably not a token
   if (FILE_ENDING_REGEX.test(part)) return false
 
-  //  Test 3 - Check no. of digits.
+  //  Test 2 - Check no. of digits.
   if (NUMERIC_REGEX.test(part)) return true
 
-  //  Test 4 - Check no. of special symbols.
-  if (SPECIAL_CHAR_REGEX.test(part)) return true
+  //  Test 3 - Check no. of special symbols.
+  const symbolCount = (part.match(SPECIAL_CHAR_REGEX) || []).length
+  if (symbolCount >= 2) return true
 
-  //  Test 5 - Check lowercase and uppercase ratios.
+  //  Test 4 - Check lowercase and uppercase ratios.
   const totalChars = part.length
   const lowerChars = (part.match(LOWER_CASE_REGEX) || []).length
   const upperChars = (part.match(UPPER_CASE_REGEX) || []).length
