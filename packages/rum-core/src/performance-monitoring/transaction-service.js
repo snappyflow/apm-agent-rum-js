@@ -317,8 +317,10 @@ class TransactionService {
               }
             }
           }
-          this.setSession(tr)
         }
+
+        // Add the session to transaction
+        this.setSession(tr)
 
         captureNavigation(tr)
 
