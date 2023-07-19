@@ -288,12 +288,12 @@ export function slugifyUrl(urlStr, depth = 2) {
   return redacted
 }
 
-const LETTER_THRESHOLD_MIN = 0.3
+const LETTER_THRESHOLD_MIN = 0.35
 const LETTER_THRESHOLD_MAX = 0.6
 
 const UPPER_CASE_REGEX = /[A-Z]/g
 const LOWER_CASE_REGEX = /[a-z]/g
-const NUMERIC_REGEX = /[0-9]/g
+const NUMERIC_REGEX = /[0-9]/
 const SPECIAL_CHAR_REGEX = /[\W_]/g
 const FILE_ENDING_REGEX = /\.\w+#?$/
 
@@ -339,9 +339,9 @@ function isToken(part) {
   const lowerRatio = lowerChars / totalChars
   const upperRatio = upperChars / totalChars
 
-  if (lowerRatio < LETTER_THRESHOLD_MAX && lowerRatio > LETTER_THRESHOLD_MIN)
+  if (LETTER_THRESHOLD_MIN < lowerRatio && lowerRatio < LETTER_THRESHOLD_MAX)
     return true
-  if (upperRatio < LETTER_THRESHOLD_MAX && upperRatio > LETTER_THRESHOLD_MIN)
+  if (LETTER_THRESHOLD_MIN < upperRatio && upperRatio < LETTER_THRESHOLD_MAX)
     return true
 
   //  Fulfilled the last of the conditions; it's probably not a token
