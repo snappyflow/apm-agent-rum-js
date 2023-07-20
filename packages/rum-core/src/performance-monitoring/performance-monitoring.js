@@ -32,7 +32,7 @@ import {
   stripQueryStringFromUrl,
   setRequestHeader
 } from '../common/utils'
-import { Url } from '../common/url'
+import { Url, sfSlugify } from '../common/url'
 import { patchEventHandler } from '../common/patching'
 import { globalState } from '../common/patching/patch-utils'
 import {
@@ -414,6 +414,23 @@ export default class PerformanceMonitoring {
       experience: transaction.experience,
       outcome: transaction.outcome
     }
+
+    //  Ensure the slugify is applied properly to URLs
+    //  Sometimes, transaction.name is inconsistent with transaction.context.url
+    if (
+      transaction.context &&
+      transaction.context.url &&
+      transactionData.name !== sfSlugify(transaction.context.url)
+    ) {
+      const pageLoadName = this.configService.get('pageLoadTransactionName')
+
+      if (transactionData.type === 'page-load' && pageLoadName) {
+        transactionData.name = pageLoadName
+      } else {
+        transactionData.name = sfSlugify(transaction.context.url)
+      }
+    }
+
     return truncateModel(TRANSACTION_MODEL, transactionData)
   }
 
