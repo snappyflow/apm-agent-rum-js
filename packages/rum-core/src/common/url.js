@@ -288,15 +288,6 @@ export function slugifyUrl(urlStr, depth = 2) {
   return redacted
 }
 
-const LETTER_THRESHOLD_MIN = 0.35
-const LETTER_THRESHOLD_MAX = 0.6
-
-const UPPER_CASE_REGEX = /[A-Z]/g
-const LOWER_CASE_REGEX = /[a-z]/g
-const NUMERIC_REGEX = /[0-9]/
-const SPECIAL_CHAR_REGEX = /[\W_]/g
-const FILE_ENDING_REGEX = /\.\w+#?$/
-
 /***
  * isToken(part: string): boolean
  * @abstract Determines if the given string is a token or not.
@@ -322,27 +313,25 @@ function isToken(part) {
   //if (typeof(part) !== "string") throw (`${part} should be a string.`);
 
   //	Test 1 - If a file, like "*.html" or something is encountered, probably not a token
-  if (FILE_ENDING_REGEX.test(part)) return false
+  if (/\.\w+#?$/.test(part)) return false
 
   //  Test 2 - Check no. of digits.
-  if (NUMERIC_REGEX.test(part)) return true
+  if (/[0-9]/.test(part)) return true
 
   //  Test 3 - Check no. of special symbols.
-  const symbolCount = (part.match(SPECIAL_CHAR_REGEX) || []).length
+  const symbolCount = (part.match(/[\W_]/g) || []).length
   if (symbolCount >= 2) return true
 
   //  Test 4 - Check lowercase and uppercase ratios.
   const totalChars = part.length
-  const lowerChars = (part.match(LOWER_CASE_REGEX) || []).length
-  const upperChars = (part.match(UPPER_CASE_REGEX) || []).length
+  const lowerChars = (part.match(/[a-z]/g) || []).length
+  const upperChars = (part.match(/[A-Z]/g) || []).length
 
   const lowerRatio = lowerChars / totalChars
   const upperRatio = upperChars / totalChars
 
-  if (LETTER_THRESHOLD_MIN < lowerRatio && lowerRatio < LETTER_THRESHOLD_MAX)
-    return true
-  if (LETTER_THRESHOLD_MIN < upperRatio && upperRatio < LETTER_THRESHOLD_MAX)
-    return true
+  if (0.35 < lowerRatio && lowerRatio < 0.6) return true
+  if (0.35 < upperRatio && upperRatio < 0.6) return true
 
   //  Fulfilled the last of the conditions; it's probably not a token
   return false
