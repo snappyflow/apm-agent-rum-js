@@ -416,18 +416,22 @@ export default class PerformanceMonitoring {
     }
 
     //  Ensure the slugify is applied properly to URLs
-    //  Sometimes, transaction.name is inconsistent with transaction.context.url
+    //  Sometimes, transaction.name is inconsistent with transaction.context.page.url
     if (
       transaction.context &&
-      transaction.context.url &&
-      transactionData.name !== sfSlugify(transaction.context.url)
+      transaction.context.page &&
+      transaction.context.page.url &&
+      transactionData.name !== sfSlugify(transaction.context.page.url)
     ) {
-      const pageLoadName = this.configService.get('pageLoadTransactionName')
+      const configService = this.configService
+      const pageLoadName = configService
+        ? configService.get('pageLoadTransactionName')
+        : undefined
 
       if (transactionData.type === 'page-load' && pageLoadName) {
         transactionData.name = pageLoadName
       } else {
-        transactionData.name = sfSlugify(transaction.context.url)
+        transactionData.name = sfSlugify(transaction.context.page.url)
       }
     }
 
